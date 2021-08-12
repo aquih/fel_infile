@@ -96,7 +96,7 @@ class AccountMove(models.Model):
                 logging.basicConfig(level=logging.DEBUG)
                 httpclient_logger = logging.getLogger("http.client")
                 def httpclient_log(*args):
-                    httpclient_logger.log(level, " ".join(args))
+                    httpclient_logger.log(logging.DEBUG, " ".join(args))
 
                 http.client.print = httpclient_log
                 http.client.HTTPConnection.debuglevel = 1

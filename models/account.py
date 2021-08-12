@@ -85,16 +85,6 @@ class AccountInvoice(models.Model):
         if result:
             for factura in self:
                 if factura.journal_id.usuario_fel and factura.requiere_certificacion():
-                    
-                    import http.client
-                    logging.basicConfig(level=logging.DEBUG)
-                    httpclient_logger = logging.getLogger("http.client")
-                    def httpclient_log(*args):
-                        httpclient_logger.log(level, " ".join(args))
-
-                    http.client.print = httpclient_log
-                    http.client.HTTPConnection.debuglevel = 1
-                    
                     dte = factura.dte_anulacion()
                     xmls = etree.tostring(dte, encoding="UTF-8")
                     xmls = xmls.decode("utf-8").replace("&amp;", "&").encode("utf-8")

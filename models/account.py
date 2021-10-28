@@ -29,7 +29,7 @@ class AccountMove(models.Model):
     
     def certificar(self):
         for factura in self:
-            if factura.requiere_certificacion():
+            if factura.requiere_certificacion('infile'):
                 self.ensure_one()
 
                 if factura.error_pre_validacion():
@@ -148,3 +148,4 @@ class ResCompany(models.Model):
     usuario_fel = fields.Char('Usuario FEL')
     clave_fel = fields.Char('Clave FEL')
     token_firma_fel = fields.Char('Token Firma FEL')
+    certificador_fel = fields.Selection(selection_add=[('infile', 'Infile')])

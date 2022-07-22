@@ -35,13 +35,26 @@ class AccountMove(models.Model):
                 if factura.error_pre_validacion():
                     return False
                 
+                if factura.company_id.buscar_nombre_para_dte_fel and not factura.partner_id.nombre_facturacion_fel:
+                    headers = { "Content-Type": "application/json" }
+                    data = {
+                        "emisor_codigo": factura.company_id.usuario_fel,
+                        "emisor_clave": factura.company_id.clave_fel,
+                        "nit_consulta": factura.partner_id.vat.replace('-',''),
+                    }
+                    r = requests.post('https://consultareceptores.feel.com.gt/rest/action', json=data, headers=headers)
+                    logging.warning(r.text)
+                    if r and r.json():
+                        datos_nit = r.json()
+                        factura.partner_id.nombre_facturacion_fel = datos_nit['nombre']
+                
                 dte = factura.dte_documento()
-                logging.warn(dte)
+                logging.warning(dte)                
                 xmls = etree.tostring(dte, encoding="UTF-8")
                 xmls = xmls.decode("utf-8").replace("&amp;", "&").encode("utf-8")
                 xmls_base64 = base64.b64encode(xmls)
-                logging.warn(xmls)
-
+                logging.warning(xmls)
+                
                 headers = { "Content-Type": "application/json" }
                 data = {
                     "llave": factura.company_id.token_firma_fel,
@@ -50,7 +63,7 @@ class AccountMove(models.Model):
                     "alias": factura.company_id.usuario_fel,
                 }
                 r = requests.post('https://signer-emisores.feel.com.gt/sign_solicitud_firmas/firma_xml', json=data, headers=headers)
-                logging.warn(r.text)
+                logging.warning(r.text)
                 firma_json = r.json()
                 if firma_json["resultado"]:
 
@@ -66,7 +79,7 @@ class AccountMove(models.Model):
                         "xml_dte": firma_json["archivo"]
                     }
                     r = requests.post("https://certificador.feel.com.gt/fel/certificacion/v2/dte/", json=data, headers=headers)
-                    logging.warn(r.json())
+                    logging.warning(r.json())
                     certificacion_json = r.json()
                     if certificacion_json["resultado"]:
                         factura.firma_fel = certificacion_json["uuid"]
@@ -106,7 +119,7 @@ class AccountMove(models.Model):
                 xmls = etree.tostring(dte, encoding="UTF-8")
                 xmls = xmls.decode("utf-8").replace("&amp;", "&").encode("utf-8")
                 xmls_base64 = base64.b64encode(xmls)
-                logging.warn(xmls)
+                logging.warning(xmls)
 
                 headers = { "Content-Type": "application/json" }
                 data = {
@@ -149,3 +162,4 @@ class ResCompany(models.Model):
     clave_fel = fields.Char('Clave FEL')
     token_firma_fel = fields.Char('Token Firma FEL')
     certificador_fel = fields.Selection(selection_add=[('infile', 'Infile')])
+    buscar_nombre_para_dte_fel = fields.Boolean('Buscar nombre en SAT para enviar al certificador')

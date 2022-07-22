@@ -35,6 +35,7 @@
                         <field name="usuario_fel"/>
                         <field name="clave_fel"/>
                         <field name="token_firma_fel"/>
+                        <field name="buscar_nombre_para_dte_fel"/>
                     </field>
                 </data>
             </field>

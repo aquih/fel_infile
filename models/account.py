@@ -97,6 +97,7 @@ class AccountInvoice(models.Model):
                         "archivo": xmls_base64.decode("utf-8"),
                         "codigo": factura.company_id.vat.replace('-',''),
                         "alias": factura.journal_id.usuario_fel,
+                        "es_anulacion": "S",
                     }
                     r = requests.post('https://signer-emisores.feel.com.gt/sign_solicitud_firmas/firma_xml', json=data, headers=headers)
                     logging.warn(r.text)

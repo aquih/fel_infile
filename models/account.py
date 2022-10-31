@@ -51,7 +51,7 @@ class AccountMove(models.Model):
                 dte = factura.dte_documento()
                 logging.warning(dte)                
                 xmls = etree.tostring(dte, encoding="UTF-8")
-                xmls = xmls.decode("utf-8").replace("&amp;", "&").encode("utf-8")
+                #xmls = xmls.decode("utf-8").replace("&amp;", "&").encode("utf-8")
                 xmls_base64 = base64.b64encode(xmls)
                 logging.warning(xmls)
                 
@@ -117,7 +117,7 @@ class AccountMove(models.Model):
                 dte = factura.dte_anulacion()
                 
                 xmls = etree.tostring(dte, encoding="UTF-8")
-                xmls = xmls.decode("utf-8").replace("&amp;", "&").encode("utf-8")
+                #xmls = xmls.decode("utf-8").replace("&amp;", "&").encode("utf-8")
                 xmls_base64 = base64.b64encode(xmls)
                 logging.warning(xmls)
 

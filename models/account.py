@@ -29,7 +29,7 @@ class AccountInvoice(models.Model):
                 dte = factura.dte_documento()
                 logging.warn(dte)
                 xmls = etree.tostring(dte, encoding="UTF-8")
-                xmls = xmls.decode("utf-8").replace("&amp;", "&").encode("utf-8")
+                # xmls = xmls.decode("utf-8").replace("&amp;", "&").encode("utf-8")
                 xmls_base64 = base64.b64encode(xmls)
                 logging.warn(xmls)
 
@@ -87,7 +87,7 @@ class AccountInvoice(models.Model):
                 if factura.journal_id.usuario_fel and factura.requiere_certificacion():
                     dte = factura.dte_anulacion()
                     xmls = etree.tostring(dte, encoding="UTF-8")
-                    xmls = xmls.decode("utf-8").replace("&amp;", "&").encode("utf-8")
+                    # xmls = xmls.decode("utf-8").replace("&amp;", "&").encode("utf-8")
                     xmls_base64 = base64.b64encode(xmls)
                     logging.warn(xmls)
 

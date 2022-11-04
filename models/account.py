@@ -60,6 +60,7 @@ class AccountMove(models.Model):
                     "codigo": factura.company_id.vat.replace('-',''),
                     "alias": factura.company_id.usuario_fel,
                 }
+                logging.warning(r.json())
                 r = requests.post('https://signer-emisores.feel.com.gt/sign_solicitud_firmas/firma_xml', json=data, headers=headers)
                 logging.warning(r.text)
                 firma_json = r.json()

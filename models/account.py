@@ -49,11 +49,9 @@ class AccountMove(models.Model):
                         factura.partner_id.nombre_facturacion_fel = datos_nit['nombre']
                 
                 dte = factura.dte_documento()
-                logging.warning(dte)                
                 xmls = etree.tostring(dte, encoding="UTF-8")
-                #xmls = xmls.decode("utf-8").replace("&amp;", "&").encode("utf-8")
-                xmls_base64 = base64.b64encode(xmls)
                 logging.warning(xmls)
+                xmls_base64 = base64.b64encode(xmls)
                 
                 headers = { "Content-Type": "application/json" }
                 data = {
@@ -65,7 +63,7 @@ class AccountMove(models.Model):
                 r = requests.post('https://signer-emisores.feel.com.gt/sign_solicitud_firmas/firma_xml', json=data, headers=headers)
                 logging.warning(r.text)
                 firma_json = r.json()
-                if firma_json["resultado"]:
+                if firma_json and "resultado" in firma_json:
 
                     headers = {
                         "USUARIO": factura.company_id.usuario_fel,
@@ -78,6 +76,8 @@ class AccountMove(models.Model):
                         "correo_copia": factura.company_id.email,
                         "xml_dte": firma_json["archivo"]
                     }
+                    logging.warning(headers)
+                    logging.warning(data)
                     r = requests.post("https://certificador.feel.com.gt/fel/certificacion/v2/dte/", json=data, headers=headers)
                     logging.warning(r.json())
                     certificacion_json = r.json()

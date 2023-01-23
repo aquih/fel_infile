@@ -50,7 +50,7 @@ class AccountMove(models.Model):
                 
                 dte = factura.dte_documento()
                 xmls = etree.tostring(dte, encoding="UTF-8")
-                logging.warning(xmls)
+                logging.warning(xmls.decode("utf-8"))
                 xmls_base64 = base64.b64encode(xmls)
                 
                 headers = { "Content-Type": "application/json" }

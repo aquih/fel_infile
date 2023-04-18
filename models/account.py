@@ -36,17 +36,7 @@ class AccountMove(models.Model):
                     return False
                 
                 if factura.company_id.buscar_nombre_para_dte_fel and not factura.partner_id.nombre_facturacion_fel:
-                    headers = { "Content-Type": "application/json" }
-                    data = {
-                        "emisor_codigo": factura.company_id.usuario_fel,
-                        "emisor_clave": factura.company_id.clave_fel,
-                        "nit_consulta": factura.partner_id.vat.replace('-',''),
-                    }
-                    r = requests.post('https://consultareceptores.feel.com.gt/rest/action', json=data, headers=headers)
-                    logging.warning(r.text)
-                    if r and r.json():
-                        datos_nit = r.json()
-                        factura.partner_id.nombre_facturacion_fel = datos_nit['nombre']
+                    factura.partner_id.nombre_facturacion_fel = factura.partner_id._datos_sat(factura.company_id, factura.partner_id.vat)['nombre']
                 
                 dte = factura.dte_documento()
                 xmls = etree.tostring(dte, encoding="UTF-8")
@@ -165,3 +155,20 @@ class ResCompany(models.Model):
     token_firma_fel = fields.Char('Token Firma FEL')
     certificador_fel = fields.Selection(selection_add=[('infile', 'Infile')])
     buscar_nombre_para_dte_fel = fields.Boolean('Buscar nombre en SAT para enviar al certificador')
+
+class Partner(models.Model):
+    _inherit = 'res.partner'
+    
+    def _datos_sat(self, company, vat):
+        headers = { "Content-Type": "application/json" }
+        data = {
+            "emisor_codigo": company.usuario_fel,
+            "emisor_clave": company.clave_fel,
+            "nit_consulta": vat.replace('-',''),
+        }
+        r = requests.post('https://consultareceptores.feel.com.gt/rest/action', json=data, headers=headers)
+        logging.warning(r.text)
+        if r and r.json():
+            return r.json()
+        else:
+            return {'nombre': '', 'nit': ''}

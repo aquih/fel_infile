@@ -160,15 +160,16 @@ class Partner(models.Model):
     _inherit = 'res.partner'
     
     def _datos_sat(self, company, vat):
-        headers = { "Content-Type": "application/json" }
-        data = {
-            "emisor_codigo": company.usuario_fel,
-            "emisor_clave": company.clave_fel,
-            "nit_consulta": vat.replace('-',''),
-        }
-        r = requests.post('https://consultareceptores.feel.com.gt/rest/action', json=data, headers=headers)
-        logging.warning(r.text)
-        if r and r.json():
-            return r.json()
-        else:
-            return {'nombre': '', 'nit': ''}
+        if vat:
+            headers = { "Content-Type": "application/json" }
+            data = {
+                "emisor_codigo": company.usuario_fel,
+                "emisor_clave": company.clave_fel,
+                "nit_consulta": vat.replace('-',''),
+            }
+            r = requests.post('https://consultareceptores.feel.com.gt/rest/action', json=data, headers=headers)
+            logging.warning(r.text)
+            if r and r.json():
+                return r.json()
+                
+        return {'nombre': '', 'nit': ''}

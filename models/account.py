@@ -70,7 +70,7 @@ class AccountMove(models.Model):
                     logging.warning(headers)
                     logging.warning(data)
                     r = requests.post("https://certificador.feel.com.gt/fel/certificacion/v2/dte/", json=data, headers=headers)
-                    logging.warning(r.json())
+                    logging.warning(r.text)
                     certificacion_json = r.json()
                     if certificacion_json["resultado"]:
                         factura.firma_fel = certificacion_json["uuid"]

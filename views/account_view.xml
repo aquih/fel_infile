@@ -7,6 +7,9 @@
             <field name="model">account.move</field>
             <field name="inherit_id" ref="fel_gt.invoice_form_fel_gt"/>
             <field name="arch" type="xml">
+                <button name="button_draft" position="after">
+                    <button name="certificar" id="certificar" string="Certificar FEL" type="object" attrs="{'invisible' : [('firma_fel', '!=', False)]}"/>
+                </button>
                 <data>
                     <field name="resultado_xml_fel" position="after">
                         <field name="pdf_fel" widget="url"/>

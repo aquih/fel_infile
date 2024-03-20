@@ -54,7 +54,7 @@ class AccountMove(models.Model):
                 r = requests.post('https://signer-emisores.feel.com.gt/sign_solicitud_firmas/firma_xml', json=data, headers=headers)
                 logging.warning(r.text)
                 firma_json = r.json()
-                if firma_json and "resultado" in firma_json:
+                if firma_json and "resultado" in firma_json and firma_json["resultado"]:
 
                     headers = {
                         "USUARIO": factura.company_id.usuario_fel,
@@ -83,11 +83,9 @@ class AccountMove(models.Model):
                         factura.certificador_fel = "infile"
                     else:
                         factura.error_certificador(str(certificacion_json["descripcion_errores"]))
-                        return False
                         
                 else:
                     factura.error_certificador(r.text)
-                    return False
 
         return True
         

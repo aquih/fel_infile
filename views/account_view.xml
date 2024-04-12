@@ -8,6 +8,9 @@
             <field name="inherit_id" ref="fel_gt.invoice_form_fel_gt"/>
             <field name="arch" type="xml">
                 <data>
+                    <button name="button_draft" position="after">
+                        <button name="certificar" id="certificar" string="Certificar FEL" type="object" invisible="firma_fel != False"/>
+                    </button>
                     <field name="resultado_xml_fel" position="after">
                         <field name="pdf_fel" widget="url"/>
                     </field>

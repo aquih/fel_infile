@@ -23,10 +23,6 @@ class AccountMove(models.Model):
         if self.certificar():
             return super(AccountMove, self)._post(soft)
 
-    def post(self):
-        if self.certificar():
-            return super(AccountMove, self).post()
-    
     def certificar(self):
         for factura in self:
             if factura.requiere_certificacion('infile'):

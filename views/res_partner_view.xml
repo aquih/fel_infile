@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
 
-    <record model="ir.ui.view" id="view_partner_form_fel_g4s">
-        <field name="name">res.partner.form.fel_g4s</field>
+    <record model="ir.ui.view" id="view_partner_form_fel_infile">
+        <field name="name">res.partner.form.fel_infile</field>
         <field name="model">res.partner</field>
         <field name="inherit_id" ref="base.view_partner_form"/>
         <field name="arch" type="xml">
@@ -20,4 +20,4 @@
         </field>
     </record>
 
-</openerp>
+</odoo>

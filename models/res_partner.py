@@ -6,6 +6,8 @@ from odoo.tools.float_utils import float_round
 
 import requests
 
+import logging
+
 class Partner(models.Model):
     _inherit = 'res.partner'
 

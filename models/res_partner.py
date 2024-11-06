@@ -4,6 +4,8 @@ from odoo import models, fields, api, _
 from odoo.exceptions import UserError, ValidationError
 from odoo.tools.float_utils import float_round
 
+import requests
+
 class Partner(models.Model):
     _inherit = 'res.partner'
 

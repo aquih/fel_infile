@@ -9,8 +9,8 @@
     'website': 'http://aquih.com/',
     'depends': ['fel_gt'],
     'data': [
-        'views/account_view.xml',
-        'views/res_partner_view.xml',
+        'views/account_views.xml',
+        'views/res_partner_views.xml',
     ],
     'demo': [],
     'installable': True

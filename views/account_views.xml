@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
 
-    <record model="ir.ui.view" id="fel_infile_view_move_form">
+    <record model="ir.ui.view" id="view_move_form">
         <field name="name">account.move.form.inherit.fel_infile</field>
         <field name="model">account.move</field>
         <field name="inherit_id" ref="fel_gt.view_move_form"/>

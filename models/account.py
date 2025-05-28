@@ -28,9 +28,13 @@ class AccountMove(models.Model):
             return super(AccountMove, self).post()
     
     def certificar(self):
+        # Solo se puede certificar mas de una factura si todas son del mismo
+        # diario y el diario tiene marcado error en historial
+        if len(self.journal_id) > 1 or not self.journal_id.error_en_historial_fel:
+            self.ensure_one()
+
         for factura in self:
             if factura.requiere_certificacion('infile'):
-                self.ensure_one()
 
                 if factura.error_pre_validacion():
                     return False

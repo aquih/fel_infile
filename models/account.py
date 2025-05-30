@@ -151,8 +151,8 @@ class ResCompany(models.Model):
     _inherit = "res.company"
 
     usuario_fel = fields.Char('Usuario FEL')
-    clave_fel = fields.Char('Clave FEL')
-    token_firma_fel = fields.Char('Token Firma FEL')
+    clave_fel = fields.Char('Llave API FEL')
+    token_firma_fel = fields.Char('Llave Firma FEL')
     certificador_fel = fields.Selection(selection_add=[('infile', 'Infile')])
     buscar_nombre_para_dte_fel = fields.Boolean('Buscar nombre en SAT para enviar al certificador')
 

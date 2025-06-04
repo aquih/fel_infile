@@ -50,7 +50,7 @@ class AccountMove(models.Model):
                     logging.warning(r.text)
                     firma_json = r.json()
                     if firma_json and "resultado" in firma_json and firma_json["resultado"]:
-                        identificador = factura.journal_id.code+str(factura.id)
+                        identificador = factura.journal_id.code+'-'+str(factura.id)
                         if factura.contingencia_fel:
                             identificador = factura.journal_id.code+'(CONT)'+str(factura.numero_acceso_fel)
 
@@ -121,7 +121,7 @@ class AccountMove(models.Model):
                 logging.warn(r.text)
                 firma_json = r.json()
                 if firma_json["resultado"]:
-                    identificador = factura.journal_id.code+str(factura.id)
+                    identificador = factura.journal_id.code+'-'+str(factura.id)
                     if factura.contingencia_fel:
                         identificador = factura.journal_id.code+'(CONT)'+str(factura.numero_acceso_fel)
 

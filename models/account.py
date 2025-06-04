@@ -63,7 +63,7 @@ class AccountMove(models.Model):
                     headers = {
                         "USUARIO": factura.company_id.usuario_fel,
                         "LLAVE": factura.company_id.clave_fel,
-                        "IDENTIFICADOR": factura.journal_id.code+str(factura.id),
+                        "IDENTIFICADOR": factura.journal_id.code+'-'+str(factura.id),
                         "Content-Type": "application/json",
                     }
                     data = {
@@ -130,7 +130,7 @@ class AccountMove(models.Model):
                     headers = {
                         "USUARIO": factura.company_id.usuario_fel,
                         "LLAVE": factura.company_id.clave_fel,
-                        "IDENTIFICADOR": factura.journal_id.code+str(factura.id),
+                        "IDENTIFICADOR": factura.journal_id.code+'-'+str(factura.id),
                         "Content-Type": "application/json",
                     }
                     data = {

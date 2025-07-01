@@ -33,3 +33,26 @@ class Partner(models.Model):
                 return r.json()
                 
         return {'nombre': '', 'nit': ''}
+
+    def _datos_sat_cui(self, company, cui):
+        if cui:
+            data_token = {
+                "prefijo": company.usuario_fel,
+                "llave": company.clave_fel,
+            }
+            r_token = requests.post('https://certificador.feel.com.gt/api/v2/servicios/externos/login', data=data_token)
+            logging.warning(r_token.text)
+            if r_token and r_token.json():
+                if r_token.json()['resultado'] == False:
+                    return r_token.json()
+                else:
+                    token = r_token.json()['token']
+                    headers = { "Authorization": f"Bearer {token}" }
+                    data = {
+                        "cui": cui,
+                    }
+                    r = requests.post('https://certificador.feel.com.gt/api/v2/servicios/externos/cui', data=data, headers=headers)
+                    logging.warning(r.text)
+                    if r and r.json():
+                        return r.json()
+        return {'nombre': '', 'cui': ''}

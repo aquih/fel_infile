@@ -13,14 +13,19 @@ import logging
 class Partner(models.Model):
     _inherit = 'res.partner'
 
-    def obtener_nombre_facturacion_fel(self):
-        vat = self.vat
-        if self.nit_facturacion_fel:
-            vat = self.nit_facturacion_fel
-            
-        res = self._datos_sat(self.env.company, vat)
-        self.nombre_facturacion_fel = res['nombre']
-    
+    def obtener_nombre_facturacion_fel(self, company_id=None, vat=None):
+        if not vat:
+            vat = self.vat
+            if self.nit_facturacion_fel:
+                vat = self.nit_facturacion_fel
+        company = self.env['res.company'].search([('id', '=', company_id)]) if company_id else self.env.company
+        
+        res = self._datos_sat(company, vat)
+        if(not res.get('nombre', {})):
+            res = self._datos_sat_cui(company, vat)
+        self.nombre_facturacion_fel = res['nombre'] or ''
+        return res
+
     def _datos_sat(self, company, vat):
         if vat:
             headers = { "Content-Type": "application/json" }

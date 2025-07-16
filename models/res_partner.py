@@ -13,121 +13,96 @@ import logging
 class Partner(models.Model):
     _inherit = 'res.partner'
 
-    def obtener_nombre_facturacion_fel(self):
+    def guardar_nombre_facturacion_fel(self):
         vat = self.vat
         if self.nit_facturacion_fel:
             vat = self.nit_facturacion_fel
             
-        res = self._datos_sat(self.env.company, vat)
+        res = self.obtener_datos_facturacion_fel(self.env.company, vat)
         self.nombre_facturacion_fel = res['nombre']
-    
-    def _datos_sat(self, company, vat):
-        if vat:
-            headers = { "Content-Type": "application/json" }
-            data = {
-                "emisor_codigo": company.usuario_fel,
-                "emisor_clave": company.clave_fel,
-                "nit_consulta": vat.replace('-',''),
-            }
-            r = requests.post('https://consultareceptores.feel.com.gt/rest/action', json=data, headers=headers)
-            logging.info(r.text)
 
-            if r:
-                try:
-                    response = r.json()
-                    return {
-                        'nombre': response.get('nombre'), 
-                        'nit': response.get('nit'), 
-                        'mensaje': response.get('mensaje')
-                    }
-                except Exception as e:
-                    logging.warning(f"Error al procesar json: {e}")
-                    return {
-                        'nombre': '', 
-                        'nit': '', 
-                        'mensaje': 'No se pudo procesar la respuesta json.'
-                    }
-        return {'nombre': '', 'nit': '', 'mensaje': ''}
+    def obtener_datos_facturacion_fel(self, company, vat):
+        res = self._datos_sat(self.env.company, vat)
+        if not res['nombre']:
+            res = self._datos_sat_cui(self.env.company, vat)
+        return res
+    
+    def _datos_sat(self, company, nit):
+        headers = { "Content-Type": "application/json" }
+        data = {
+            "emisor_codigo": company.usuario_fel,
+            "emisor_clave": company.clave_fel,
+            "nit_consulta": (nit or '').replace('-',''),
+        }
+        resultado_certificador_json = requests.post('https://consultareceptores.feel.com.gt/rest/action', json=data, headers=headers)
+        logging.info(resultado_certificador_json.text)
+
+        datos_contribuyente = { 'nombre': '', 'nit': '', 'mensaje': '' }
+
+        try:
+            resultado_certificador = resultado_certificador_json.json()
+
+            datos_contribuyente['nombre'] = resultado_certificador.get('nombre')
+            datos_contribuyente['nit'] = resultado_certificador.get('nit')
+            datos_contribuyente['mensaje'] = resultado_certificador.get('mensaje')
+        except Exception as e:
+            logging.warning(e)
+            datos_contribuyente['mensaje'] = e
+
+        return datos_contribuyente
 
     def _datos_sat_cui(self, company, cui):
-        if cui:
-            token = ''
-            if company.token_cui:
-                token_cui = json.loads(company.token_cui)
-                vencimiento_token = token_cui.get('fecha_de_vencimiento')
-                ahora = datetime.now(pytz.timezone('America/Guatemala'))
-                if ahora < datetime.fromisoformat(vencimiento_token):
-                    token = token_cui.get('token')
-    
-            if not token:
-                result_token_generado = self._generar_token(company)             
-                if result_token_generado.get('mensaje', {}):
-                    return {
-                        'nombre': '', 
-                        'nit': '', 
-                        'mensaje': result_token_generado.get('mensaje', {})
-                    } 
-                else: 
-                    token = result_token_generado['token']
-            
-            headers = { "Authorization": f"Bearer {token}" }
-            data = {
-                "cui": cui,
-            }
-            r = requests.post('https://certificador.feel.com.gt/api/v2/servicios/externos/cui', data=data, headers=headers)
-            logging.info(r.text)
-
-            if r is not None:
-                try:
-                    response = r.json()
-                    if response.get('cui', {}) and response.get('cui', {}).get('nombre') != 'NA':
-                        return {
-                            'nombre': response['cui']['nombre'],
-                            'nit': response['cui']['cui'],
-                            'mensaje': ''
-                        }
-                    else:
-                        return {
-                            'nombre': '',
-                            'nit': '',
-                            'mensaje': response.get('descripcion', 'No se encontró descripción')
-                        }
-                except Exception as e:
-                    logging.warning(f"Error al procesar json: {e}")
-                    return {
-                        'nombre': '', 
-                        'nit': '', 
-                        'mensaje': 'No se pudo procesar la respuesta json.'
-                        } 
-        return {'nombre': '', 'nit': '', 'mensaje': "No se pudo obtener el CUI."}
-    
-    def _generar_token(self, company):
-        data_token = {
-            "prefijo": company.usuario_fel,
-            "llave": company.clave_fel,
+        token = self._obtener_token(company)
+        headers = { "Authorization": f"Bearer {token['token']}" }
+        data = {
+            "cui": cui or '',
         }
-        r_token = requests.post('https://certificador.feel.com.gt/api/v2/servicios/externos/login', data=data_token)
-        logging.info(r_token.text)
 
-        if r_token is not None:
+        resultado_certificador_json = requests.post('https://certificador.feel.com.gt/api/v2/servicios/externos/cui', data=data, headers=headers)
+        logging.info(resultado_certificador_json.text)
+
+        datos_contribuyente = { 'nombre': '', 'nit': '', 'mensaje': '' }
+
+        try:
+            resultado_certificador = resultado_certificador_json.json()
+            resultado_certificador_cui = resultado_certificador.get('cui', {})
+
+            datos_contribuyente['nombre'] = resultado_certificador_cui.get('nombre')
+            datos_contribuyente['nit'] = resultado_certificador_cui.get('cui')
+            datos_contribuyente['mensaje'] = resultado_certificador_cui.get('descripcion')
+        except Exception as e:
+            logging.warning(e)
+            datos_contribuyente['mensaje'] = e
+
+        return datos_contribuyente
+    
+    def _obtener_token(self, company):
+        datos_token = { 'token': '', 'mensaje': '' }
+        
+        if company.token_cui:
+            token_cui = json.loads(company.token_cui)
+            vencimiento_token = token_cui.get('fecha_de_vencimiento')
+            ahora = datetime.now(pytz.timezone('America/Guatemala'))
+
+            if ahora < datetime.fromisoformat(vencimiento_token):
+                datos_token['token'] = token_cui.get('token')
+
+        else:
+            data_post = {
+                "prefijo": company.usuario_fel,
+                "llave": company.clave_fel,
+            }
+            resultado_certificador_json = requests.post('https://certificador.feel.com.gt/api/v2/servicios/externos/login', data=data_post)
+            logging.info(resultado_certificador_json.text)
+
             try:
-                token_response = r_token.json()
-                if token_response.get('resultado') is False:
-                    return {
-                        'token': '',
-                        'mensaje': token_response.get('descripcion', 'Sin descripción')
-                    }
-                else:
-                    company.token_cui = json.dumps(token_response)
-                    return {
-                        'token': token_response.get('token', ''),
-                        'mensaje': token_response.get('descripcion', '')
-                    }
+                resultado_certificador = resultado_certificador_json.json()
+                if resultado_certificador.get('resultado'):
+                    datos_token['token'] = resultado_certificador.get('token', '')
+                    datos_token['mensaje'] = resultado_certificador.get('descripcion', '')
+
+                    company.token_cui = json.dumps(resultado_certificador)                    
             except Exception as e:
-                logging.warning(f"Error al procesar json: {e}")
-                return {
-                    'token': '',
-                    'mensaje': 'No se pudo procesar la respuesta json.'
-                }
-        return {'token': '', 'mensaje': "No se pudo obtener el token de autenticación para CUI."}
-            
+                datos_token['mensaje'] = e
+
+        return datos_token

@@ -31,7 +31,7 @@ class AccountMove(models.Model):
 
                 try:
                     if factura.company_id.buscar_nombre_para_dte_fel and not factura.partner_id.nombre_facturacion_fel:
-                        factura.partner_id.nombre_facturacion_fel = factura.partner_id._datos_sat(factura.company_id, factura.partner_id.vat)['nombre']
+                        factura.partner_id.nombre_facturacion_fel = factura.partner_id.obtener_datos_facturacion_fel(factura.company_id, factura.partner_id.vat)['nombre']
                     
                     dte = factura.dte_documento()
                     xmls = etree.tostring(dte, encoding="UTF-8")
@@ -51,7 +51,13 @@ class AccountMove(models.Model):
                     firma_json = r.json()
                     if firma_json and "resultado" in firma_json and firma_json["resultado"]:
                         identificador = factura.journal_id.code+'-'+str(factura.id)
-                        if factura.contingencia_fel:
+
+                        # Solo enviar el numero de acceso como identificador cuando es una factura nueva,
+                        # queriendo decir que nunca se ha enviado a infile.
+                        # Si es una factura que ya fue confirmada, lo mas seguro es que ya se haya enviado a
+                        # infile. Y, si se manda el numero de acceso y no el ID, la tomara como otra factura
+                        # y la duplicara.
+                        if factura.contingencia_fel and factura.state == 'draft':
                             identificador = factura.journal_id.code+'(CONT)'+str(factura.numero_acceso_fel)
 
                         headers = {
@@ -80,8 +86,7 @@ class AccountMove(models.Model):
                             factura.pdf_fel = "https://report.feel.com.gt/ingfacereport/ingfacereport_documento?uuid="+certificacion_json["uuid"]
                             factura.certificador_fel = "infile"
                         else:
-                            factura.error_certificador(str(certificacion_json["descripcion_errores"]))
-                            
+                            factura.error_certificador(str(certificacion_json["descripcion_errores"]))    
                     else:
                         factura.error_certificador(r.text)
                 except Exception as e:

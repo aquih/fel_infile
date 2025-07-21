@@ -80,6 +80,7 @@ class Partner(models.Model):
     
     def _obtener_token(self, company):
         datos_token = { 'token': '', 'mensaje': '' }
+        
         if company.token_cui:
             token_cui = json.loads(company.token_cui)
             vencimiento_token = token_cui.get('fecha_de_vencimiento')
@@ -90,7 +91,8 @@ class Partner(models.Model):
             else:
                 company.token_cui = ''
 
-        if not company.token_cui:
+        # Si el token está vencido
+        if not datos_token['token']:
             data_post = {
                 "prefijo": company.usuario_fel,
                 "llave": company.clave_fel,

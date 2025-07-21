@@ -67,9 +67,11 @@ class Partner(models.Model):
             resultado_certificador = resultado_certificador_json.json()
             resultado_certificador_cui = resultado_certificador.get('cui', {})
 
-            datos_contribuyente['nombre'] = resultado_certificador_cui.get('nombre')
-            datos_contribuyente['nit'] = resultado_certificador_cui.get('cui')
-            datos_contribuyente['mensaje'] = resultado_certificador_cui.get('descripcion')
+            if resultado_certificador_cui:
+                datos_contribuyente['nombre'] = resultado_certificador_cui.get('nombre')
+                datos_contribuyente['nit'] = resultado_certificador_cui.get('cui')
+            else:
+                datos_contribuyente['mensaje'] = resultado_certificador.get('descripcion')
         except Exception as e:
             logging.warning(e)
             datos_contribuyente['mensaje'] = e
@@ -78,7 +80,6 @@ class Partner(models.Model):
     
     def _obtener_token(self, company):
         datos_token = { 'token': '', 'mensaje': '' }
-        
         if company.token_cui:
             token_cui = json.loads(company.token_cui)
             vencimiento_token = token_cui.get('fecha_de_vencimiento')
@@ -86,8 +87,10 @@ class Partner(models.Model):
 
             if ahora < datetime.fromisoformat(vencimiento_token):
                 datos_token['token'] = token_cui.get('token')
+            else:
+                company.token_cui = ''
 
-        else:
+        if not company.token_cui:
             data_post = {
                 "prefijo": company.usuario_fel,
                 "llave": company.clave_fel,

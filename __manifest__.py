@@ -2,12 +2,12 @@
 
 {
     'name': 'FEL Infile',
-    'version': '1.6',
+    'version': '1.7',
     'category': 'Custom',
     'description': """ Integración con factura electrónica de Infile """,
     'author': 'aquíH',
     'website': 'http://www.aquih.com/',
-    'depends': ['fel_gt'],
+    'depends': ['base', 'fel_gt'],
     'data': [
         'views/account_views.xml',
         'views/res_partner_views.xml',

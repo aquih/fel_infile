@@ -13,6 +13,7 @@ import re
 #from import XMLSigner
 
 import logging
+_logger = logging.getLogger(__name__)
 
 class AccountMove(models.Model):
     _inherit = "account.move"
@@ -35,7 +36,7 @@ class AccountMove(models.Model):
                     
                     dte = factura.dte_documento()
                     xmls = etree.tostring(dte, encoding="UTF-8")
-                    logging.warning(xmls.decode("utf-8"))
+                    _logger.info(xmls.decode("utf-8"))
                     xmls_base64 = base64.b64encode(xmls)
                     
                     headers = { "Content-Type": "application/json" }
@@ -45,9 +46,9 @@ class AccountMove(models.Model):
                         "codigo": factura.company_id.vat.replace('-',''),
                         "alias": factura.company_id.usuario_fel,
                     }
-                    logging.warning(data)
+                    _logger.info(data)
                     r = requests.post('https://signer-emisores.feel.com.gt/sign_solicitud_firmas/firma_xml', json=data, headers=headers)
-                    logging.warning(r.text)
+                    _logger.info(r.text)
                     firma_json = r.json()
                     if firma_json and "resultado" in firma_json and firma_json["resultado"]:
                         identificador = factura.journal_id.code+'-'+str(factura.id)
@@ -71,10 +72,10 @@ class AccountMove(models.Model):
                             "correo_copia": factura.company_id.email,
                             "xml_dte": firma_json["archivo"]
                         }
-                        logging.warning(headers)
-                        logging.warning(data)
+                        _logger.info(headers)
+                        _logger.info(data)
                         r = requests.post("https://certificador.feel.com.gt/fel/certificacion/v2/dte/", json=data, headers=headers)
-                        logging.warning(r.text)
+                        _logger.info(r.text)
                         certificacion_json = r.json()
                         if certificacion_json["resultado"]:
                             factura.firma_fel = certificacion_json["uuid"]
@@ -112,7 +113,7 @@ class AccountMove(models.Model):
                 
                 xmls = etree.tostring(dte, encoding="UTF-8")
                 xmls_base64 = base64.b64encode(xmls)
-                logging.warning(xmls)
+                _logger.info(xmls)
 
                 headers = { "Content-Type": "application/json" }
                 data = {
@@ -173,7 +174,7 @@ class Partner(models.Model):
                 "nit_consulta": vat.replace('-',''),
             }
             r = requests.post('https://consultareceptores.feel.com.gt/rest/action', json=data, headers=headers)
-            logging.warning(r.text)
+            _logger.info(r.text)
             if r and r.json():
                 return r.json()
                 

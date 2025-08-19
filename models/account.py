@@ -52,14 +52,8 @@ class AccountMove(models.Model):
                     firma_json = r.json()
                     if firma_json and "resultado" in firma_json and firma_json["resultado"]:
                         identificador = factura.journal_id.code+'-'+str(factura.id)
-
-                        # Solo enviar el numero de acceso como identificador cuando es una factura nueva,
-                        # queriendo decir que nunca se ha enviado a infile.
-                        # Si es una factura que ya fue confirmada, lo mas seguro es que ya se haya enviado a
-                        # infile. Y, si se manda el numero de acceso y no el ID, la tomara como otra factura
-                        # y la duplicara.
-                        if factura.contingencia_fel and factura.state == 'draft':
-                            identificador = factura.journal_id.code+'(CONT)'+str(factura.numero_acceso_fel)
+                        if factura.uuid_pos_fel:
+                            identificador = factura.uuid_pos_fel
 
                         headers = {
                             "USUARIO": factura.company_id.usuario_fel,
@@ -128,8 +122,8 @@ class AccountMove(models.Model):
                 firma_json = r.json()
                 if firma_json["resultado"]:
                     identificador = factura.journal_id.code+'-'+str(factura.id)
-                    if factura.contingencia_fel:
-                        identificador = factura.journal_id.code+'(CONT)'+str(factura.numero_acceso_fel)
+                    if factura.uuid_pos_fel:
+                        identificador = uuid_pos_fel
 
                     headers = {
                         "USUARIO": factura.company_id.usuario_fel,

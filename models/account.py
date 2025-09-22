@@ -143,6 +143,8 @@ class AccountMove(models.Model):
                         raise UserError(str(certificacion_json["descripcion_errores"]))
                 else:
                     raise UserError(r.text)
+        
+        return result
 
 class AccountJournal(models.Model):
     _inherit = "account.journal"

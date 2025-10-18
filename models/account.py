@@ -92,17 +92,7 @@ class AccountMove(models.Model):
     def button_cancel(self):
         result = super(AccountMove, self).button_cancel()
         for factura in self:
-            if factura.requiere_certificacion() and factura.firma_fel:
-                                    
-                import http.client
-                logging.basicConfig(level=logging.DEBUG)
-                httpclient_logger = logging.getLogger("http.client")
-                def httpclient_log(*args):
-                    httpclient_logger.log(logging.DEBUG, " ".join(args))
-
-                http.client.print = httpclient_log
-                http.client.HTTPConnection.debuglevel = 1
-                    
+            if factura.requiere_certificacion() and factura.firma_fel:                    
                 dte = factura.dte_anulacion()
                 
                 xmls = etree.tostring(dte, encoding="UTF-8")
@@ -118,7 +108,7 @@ class AccountMove(models.Model):
                     "es_anulacion": "S",
                 }
                 r = requests.post('https://signer-emisores.feel.com.gt/sign_solicitud_firmas/firma_xml', json=data, headers=headers)
-                logging.warn(r.text)
+                _logger.info(r.text)
                 firma_json = r.json()
                 if firma_json["resultado"]:
                     identificador = factura.journal_id.code+'-'+str(factura.id)
@@ -137,7 +127,7 @@ class AccountMove(models.Model):
                         "xml_dte": firma_json["archivo"]
                     }
                     r = requests.post("https://certificador.feel.com.gt/fel/anulacion/v2/dte/", json=data, headers=headers)
-                    logging.warn(r.text)
+                    _logger.info(r.text)
                     certificacion_json = r.json()
                     if not certificacion_json["resultado"]:
                         raise UserError(str(certificacion_json["descripcion_errores"]))

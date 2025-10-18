@@ -9,6 +9,7 @@ import pytz
 import requests
 
 import logging
+_logger = logging.getLogger(__name__)
 
 class Partner(models.Model):
     _inherit = 'res.partner'
@@ -35,7 +36,7 @@ class Partner(models.Model):
             "nit_consulta": (nit or '').replace('-',''),
         }
         resultado_certificador_json = requests.post('https://consultareceptores.feel.com.gt/rest/action', json=data, headers=headers)
-        logging.info(resultado_certificador_json.text)
+        _logger.info(resultado_certificador_json.text)
 
         datos_contribuyente = { 'nombre': '', 'nit': '', 'mensaje': '' }
 
@@ -46,7 +47,7 @@ class Partner(models.Model):
             datos_contribuyente['nit'] = resultado_certificador.get('nit')
             datos_contribuyente['mensaje'] = resultado_certificador.get('mensaje')
         except Exception as e:
-            logging.warning(e)
+            _logger.info(e)
             datos_contribuyente['mensaje'] = e
 
         return datos_contribuyente
@@ -59,7 +60,7 @@ class Partner(models.Model):
         }
 
         resultado_certificador_json = requests.post('https://certificador.feel.com.gt/api/v2/servicios/externos/cui', data=data, headers=headers)
-        logging.info(resultado_certificador_json.text)
+        _logger.info(resultado_certificador_json.text)
 
         datos_contribuyente = { 'nombre': '', 'nit': '', 'mensaje': '' }
 
@@ -73,7 +74,7 @@ class Partner(models.Model):
             else:
                 datos_contribuyente['mensaje'] = resultado_certificador.get('descripcion')
         except Exception as e:
-            logging.warning(e)
+            _logger.info(e)
             datos_contribuyente['mensaje'] = e
 
         return datos_contribuyente
@@ -98,7 +99,7 @@ class Partner(models.Model):
                 "llave": company.clave_fel,
             }
             resultado_certificador_json = requests.post('https://certificador.feel.com.gt/api/v2/servicios/externos/login', data=data_post)
-            logging.info(resultado_certificador_json.text)
+            _logger.info(resultado_certificador_json.text)
 
             try:
                 resultado_certificador = resultado_certificador_json.json()

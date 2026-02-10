@@ -49,7 +49,7 @@ class AccountMove(models.Model):
                     "identificador": identificador
                 }
                 data = xmls.decode("utf-8")
-                _logger.info(data)
+                _logger.info(headers)
                 r = requests.post('https://certificador.feel.com.gt/fel/procesounificado/transaccion/v2/xml', data=data, headers=headers)
                 _logger.info(r.text)
                 resultado_json = r.json()
@@ -90,7 +90,7 @@ class AccountMove(models.Model):
                     "identificador": identificador
                 }
                 data = xmls.decode("utf-8")
-                _logger.info(data)
+                _logger.info(headers)
                 r = requests.post('https://certificador.feel.com.gt/fel/procesounificado/transaccion/v2/xml', data=data, headers=headers)
                 _logger.info(r.text)
                 resultado_json = r.json()

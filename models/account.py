@@ -2,13 +2,10 @@
 
 from odoo import models, fields, api, _
 from odoo.exceptions import UserError, ValidationError
-from odoo.tools.float_utils import float_round
 
-from datetime import datetime
 import base64
 from lxml import etree
 import requests
-import re
 
 #from import XMLSigner
 
@@ -21,118 +18,87 @@ class AccountMove(models.Model):
     pdf_fel = fields.Char('PDF FEL', copy=False)
     
     def _post(self, soft=True):
-        if self.certificar():
-            return super(AccountMove, self)._post(soft)
+        self.certificar()
+        return super()._post(soft)
 
     def certificar(self):
+        if len(self) > 1 and not factura.journal_id.error_en_historial_fel:
+            raise ValidationError('No se puede certificar más de una factura si no esta activa la opción de "Error FEL en historial" en el diario.')
+
         for factura in self:
             if factura.requiere_certificacion('infile'):
-                self.ensure_one()
                 factura.error_pre_validacion()
 
-                try:
-                    if factura.company_id.buscar_nombre_para_dte_fel and not factura.partner_id.nombre_facturacion_fel:
-                        factura.partner_id.nombre_facturacion_fel = factura.partner_id.obtener_datos_facturacion_fel(factura.company_id, factura.partner_id.vat)['nombre']
-                    
-                    dte = factura.dte_documento()
-                    xmls = etree.tostring(dte, encoding="UTF-8")
-                    _logger.info(xmls.decode("utf-8"))
-                    xmls_base64 = base64.b64encode(xmls)
-                    
-                    headers = { "Content-Type": "application/json" }
-                    data = {
-                        "llave": factura.company_id.token_firma_fel,
-                        "archivo": xmls_base64.decode("utf-8"),
-                        "codigo": factura.company_id.vat.replace('-',''),
-                        "alias": factura.company_id.usuario_fel,
-                    }
-                    _logger.info(data)
-                    r = requests.post('https://signer-emisores.feel.com.gt/sign_solicitud_firmas/firma_xml', json=data, headers=headers)
-                    _logger.info(r.text)
-                    firma_json = r.json()
-                    if firma_json and "resultado" in firma_json and firma_json["resultado"]:
-                        identificador = factura.journal_id.code+'-'+str(factura.id)
-                        if factura.uuid_pos_fel:
-                            identificador = factura.uuid_pos_fel
+                if factura.company_id.buscar_nombre_para_dte_fel and not factura.partner_id.nombre_facturacion_fel:
+                    factura.partner_id.nombre_facturacion_fel = factura.partner_id.obtener_datos_facturacion_fel(factura.company_id, factura.partner_id.vat)['nombre']
+                
+                dte = factura.dte_documento()
+                xmls = etree.tostring(dte, encoding="UTF-8")
+                _logger.info(xmls.decode("utf-8"))
+                xmls_base64 = base64.b64encode(xmls)
+                
+                identificador = factura.journal_id.code+'-'+str(factura.id)
+                if factura.uuid_pos_fel:
+                    identificador = factura.uuid_pos_fel
 
-                        headers = {
-                            "USUARIO": factura.company_id.usuario_fel,
-                            "LLAVE": factura.company_id.clave_fel,
-                            "IDENTIFICADOR": identificador,
-                            "Content-Type": "application/json",
-                        }
-                        data = {
-                            "nit_emisor": factura.company_id.vat.replace('-',''),
-                            "correo_copia": factura.company_id.email,
-                            "xml_dte": firma_json["archivo"]
-                        }
-                        _logger.info(headers)
-                        _logger.info(data)
-                        r = requests.post("https://certificador.feel.com.gt/fel/certificacion/v2/dte/", json=data, headers=headers)
-                        _logger.info(r.text)
-                        certificacion_json = r.json()
-                        if certificacion_json["resultado"]:
-                            factura.firma_fel = certificacion_json["uuid"]
-                            factura.ref = str(certificacion_json["serie"])+"-"+str(certificacion_json["numero"])
-                            factura.serie_fel = certificacion_json["serie"]
-                            factura.numero_fel = certificacion_json["numero"]
-                            factura.documento_xml_fel = xmls_base64
-                            factura.resultado_xml_fel = certificacion_json["xml_certificado"]
-                            factura.pdf_fel = "https://report.feel.com.gt/ingfacereport/ingfacereport_documento?uuid="+certificacion_json["uuid"]
-                            factura.certificador_fel = "infile"
-                        else:
-                            factura.error_certificador(str(certificacion_json["descripcion_errores"]))    
-                    else:
-                        factura.error_certificador(r.text)
-                except Exception as e:
-                    factura.error_certificador(str(e))
+                headers = { 
+                    "UsuarioFirma": factura.company_id.usuario_fel,
+                    "LlaveFirma": factura.company_id.token_firma_fel,
+                    "UsuarioApi": factura.company_id.usuario_fel,
+                    "LlaveApi": factura.company_id.clave_fel,
+                    "identificador": identificador
+                }
+                data = xmls.decode("utf-8")
+                _logger.info(data)
+                r = requests.post('https://certificador.feel.com.gt/fel/procesounificado/transaccion/v2/xml', data=data, headers=headers)
+                _logger.info(r.text)
+                resultado_json = r.json()
+
+                if resultado_json and "resultado" in resultado_json and resultado_json["resultado"]:
+                    factura.firma_fel = resultado_json["uuid"]
+                    factura.ref = str(resultado_json["serie"])+"-"+str(resultado_json["numero"])
+                    factura.serie_fel = resultado_json["serie"]
+                    factura.numero_fel = resultado_json["numero"]
+                    factura.documento_xml_fel = xmls_base64
+                    factura.resultado_xml_fel = resultado_json["xml_certificado"]
+                    factura.pdf_fel = "https://report.feel.com.gt/ingfacereport/ingfacereport_documento?uuid="+resultado_json["uuid"]
+                    factura.certificador_fel = "infile"
+                else:
+                    factura.error_certificador(str(resultado_json["descripcion_errores"])) 
 
         return True
         
     def button_cancel(self):
         result = super(AccountMove, self).button_cancel()
+
         for factura in self:
             if factura.requiere_certificacion() and factura.firma_fel:                    
                 dte = factura.dte_anulacion()
                 
                 xmls = etree.tostring(dte, encoding="UTF-8")
-                xmls_base64 = base64.b64encode(xmls)
-                _logger.info(xmls)
+                _logger.info(xmls.decode("utf-8"))
 
-                headers = { "Content-Type": "application/json" }
-                data = {
-                    "llave": factura.company_id.token_firma_fel,
-                    "archivo": xmls_base64.decode("utf-8"),
-                    "codigo": factura.company_id.vat.replace('-',''),
-                    "alias": factura.company_id.usuario_fel,
-                    "es_anulacion": "S",
+                identificador = factura.journal_id.code+'-'+str(factura.id)
+                if factura.uuid_pos_fel:
+                    identificador = factura.uuid_pos_fel
+
+                headers = { 
+                    "UsuarioFirma": factura.company_id.usuario_fel,
+                    "LlaveFirma": factura.company_id.token_firma_fel,
+                    "UsuarioApi": factura.company_id.usuario_fel,
+                    "LlaveApi": factura.company_id.clave_fel,
+                    "identificador": identificador
                 }
-                r = requests.post('https://signer-emisores.feel.com.gt/sign_solicitud_firmas/firma_xml', json=data, headers=headers)
+                data = xmls.decode("utf-8")
+                _logger.info(data)
+                r = requests.post('https://certificador.feel.com.gt/fel/procesounificado/transaccion/v2/xml', data=data, headers=headers)
                 _logger.info(r.text)
-                firma_json = r.json()
-                if firma_json["resultado"]:
-                    identificador = factura.journal_id.code+'-'+str(factura.id)
-                    if factura.uuid_pos_fel:
-                        identificador = uuid_pos_fel
+                resultado_json = r.json()
 
-                    headers = {
-                        "USUARIO": factura.company_id.usuario_fel,
-                        "LLAVE": factura.company_id.clave_fel,
-                        "IDENTIFICADOR": identificador,
-                        "Content-Type": "application/json",
-                    }
-                    data = {
-                        "nit_emisor": factura.company_id.vat.replace('-',''),
-                        "correo_copia": factura.company_id.email,
-                        "xml_dte": firma_json["archivo"]
-                    }
-                    r = requests.post("https://certificador.feel.com.gt/fel/anulacion/v2/dte/", json=data, headers=headers)
-                    _logger.info(r.text)
-                    certificacion_json = r.json()
-                    if not certificacion_json["resultado"]:
-                        raise UserError(str(certificacion_json["descripcion_errores"]))
+                if resultado_json and "resultado" in resultado_json and resultado_json["resultado"]:
+                    factura.error_certificador(str(resultado_json["descripcion_errores"]))
                 else:
-                    raise UserError(r.text)
+                    factura.error_certificador(r.text)
         
         return result
 

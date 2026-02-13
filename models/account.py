@@ -22,7 +22,7 @@ class AccountMove(models.Model):
         return super()._post(soft)
 
     def certificar(self):
-        if len(self) > 1 and not factura.journal_id.error_en_historial_fel:
+        if len(self) > 1 and len(self.filtered(lambda f: not f.journal_id.error_en_historial_fel)) > 1:
             raise ValidationError('No se puede certificar más de una factura si no esta activa la opción de "Error FEL en historial" en el diario.')
 
         for factura in self:

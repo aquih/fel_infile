@@ -22,49 +22,51 @@ class AccountMove(models.Model):
         return super()._post(soft)
 
     def certificar(self):
-        if len(self) > 1 and len(self.filtered(lambda f: not f.journal_id.error_en_historial_fel)) > 1:
-            raise ValidationError('No se puede certificar más de una factura si no esta activa la opción de "Error FEL en historial" en el diario.')
+        facturas_a_certificar = self.filtered(lambda f: f.requiere_certificacion('infile'))
+        diarios_sin_error_en_historial = self.filtered(lambda f: not f.journal_id.error_en_historial_fel)
+        
+        if len(facturas_a_certificar) > 1 and len(diarios_sin_error_en_historial) > 0:
+            raise ValidationError('No se puede certificar más de una factura si no esta activa la opción de "Error FEL en historial" todos los diarios.')
 
-        for factura in self:
-            if factura.requiere_certificacion('infile'):
-                factura.error_pre_validacion()
+        for factura in facturas_a_certificar:
+            factura.error_pre_validacion()
 
-                if factura.company_id.buscar_nombre_para_dte_fel and not factura.partner_id.nombre_facturacion_fel:
-                    factura.partner_id.nombre_facturacion_fel = factura.partner_id.obtener_datos_facturacion_fel(factura.company_id, factura.partner_id.vat)['nombre']
-                
-                dte = factura.dte_documento()
-                xmls = etree.tostring(dte, encoding="UTF-8")
-                _logger.info(xmls.decode("utf-8"))
-                xmls_base64 = base64.b64encode(xmls)
-                
-                identificador = factura.journal_id.code+'-'+str(factura.id)
-                if factura.uuid_pos_fel:
-                    identificador = factura.uuid_pos_fel
+            if factura.company_id.buscar_nombre_para_dte_fel and not factura.partner_id.nombre_facturacion_fel:
+                factura.partner_id.nombre_facturacion_fel = factura.partner_id.obtener_datos_facturacion_fel(factura.company_id, factura.partner_id.vat)['nombre']
+            
+            dte = factura.dte_documento()
+            xmls = etree.tostring(dte, encoding="UTF-8")
+            _logger.info(xmls.decode("utf-8"))
+            xmls_base64 = base64.b64encode(xmls)
+            
+            identificador = factura.journal_id.code+'-'+str(factura.id)
+            if factura.uuid_pos_fel:
+                identificador = factura.uuid_pos_fel
 
-                headers = { 
-                    "UsuarioFirma": factura.company_id.usuario_fel,
-                    "LlaveFirma": factura.company_id.token_firma_fel,
-                    "UsuarioApi": factura.company_id.usuario_fel,
-                    "LlaveApi": factura.company_id.clave_fel,
-                    "identificador": identificador
-                }
-                data = xmls.decode("utf-8")
-                _logger.info(headers)
-                r = requests.post('https://certificador.feel.com.gt/fel/procesounificado/transaccion/v2/xml', data=data, headers=headers)
-                _logger.info(r.text)
-                resultado_json = r.json()
+            headers = { 
+                "UsuarioFirma": factura.company_id.usuario_fel,
+                "LlaveFirma": factura.company_id.token_firma_fel,
+                "UsuarioApi": factura.company_id.usuario_fel,
+                "LlaveApi": factura.company_id.clave_fel,
+                "identificador": identificador
+            }
+            data = xmls.decode("utf-8")
+            _logger.info(headers)
+            r = requests.post('https://certificador.feel.com.gt/fel/procesounificado/transaccion/v2/xml', data=data, headers=headers)
+            _logger.info(r.text)
+            resultado_json = r.json()
 
-                if resultado_json and "resultado" in resultado_json and resultado_json["resultado"]:
-                    factura.firma_fel = resultado_json["uuid"]
-                    factura.ref = str(resultado_json["serie"])+"-"+str(resultado_json["numero"])
-                    factura.serie_fel = resultado_json["serie"]
-                    factura.numero_fel = resultado_json["numero"]
-                    factura.documento_xml_fel = xmls_base64
-                    factura.resultado_xml_fel = resultado_json["xml_certificado"]
-                    factura.pdf_fel = "https://report.feel.com.gt/ingfacereport/ingfacereport_documento?uuid="+resultado_json["uuid"]
-                    factura.certificador_fel = "infile"
-                else:
-                    factura.error_certificador(str(resultado_json["descripcion_errores"])) 
+            if resultado_json and "resultado" in resultado_json and resultado_json["resultado"]:
+                factura.firma_fel = resultado_json["uuid"]
+                factura.ref = str(resultado_json["serie"])+"-"+str(resultado_json["numero"])
+                factura.serie_fel = resultado_json["serie"]
+                factura.numero_fel = resultado_json["numero"]
+                factura.documento_xml_fel = xmls_base64
+                factura.resultado_xml_fel = resultado_json["xml_certificado"]
+                factura.pdf_fel = "https://report.feel.com.gt/ingfacereport/ingfacereport_documento?uuid="+resultado_json["uuid"]
+                factura.certificador_fel = "infile"
+            else:
+                factura.error_certificador(str(resultado_json["descripcion_errores"])) 
 
         return True
         

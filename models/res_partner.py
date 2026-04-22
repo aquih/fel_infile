@@ -22,7 +22,7 @@ class Partner(models.Model):
         res = self.obtener_datos_facturacion_fel(self.env.company, vat)
         self.nombre_facturacion_fel = res['nombre']
 
-    def obtener_datos_facturacion_fel(self, company, vat):
+    def obtener_datos_facturacion_fel(self, vat):
         res = self._datos_sat(self.env.company, vat)
         if not res['nombre']:
             res = self._datos_sat_cui(self.env.company, vat)

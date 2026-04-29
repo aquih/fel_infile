@@ -32,7 +32,7 @@ class AccountMove(models.Model):
             factura.error_pre_validacion()
 
             if factura.company_id.buscar_nombre_para_dte_fel and not factura.partner_id.nombre_facturacion_fel:
-                factura.partner_id.nombre_facturacion_fel = factura.partner_id.obtener_datos_facturacion_fel(factura.company_id, factura.partner_id.vat)['nombre']
+                factura.partner_id.nombre_facturacion_fel = factura.partner_id.obtener_datos_facturacion_fel(factura.partner_id.vat)['nombre']
             
             dte = factura.dte_documento()
             xmls = etree.tostring(dte, encoding="UTF-8")

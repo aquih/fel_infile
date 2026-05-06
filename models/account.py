@@ -48,7 +48,8 @@ class AccountMove(models.Model):
                 "LlaveFirma": factura.company_id.token_firma_fel,
                 "UsuarioApi": factura.company_id.usuario_fel,
                 "LlaveApi": factura.company_id.clave_fel,
-                "identificador": identificador
+                "identificador": identificador,
+                "Content-Type": "application/xml",
             }
             data = xmls.decode("utf-8")
             _logger.info(headers)

@@ -2,7 +2,7 @@
 
 {
     'name': 'FEL Infile',
-    'version': '1.16',
+    'version': '1.17',
     'category': 'Custom',
     'description': """ Integración con factura electrónica de Infile """,
     'author': 'aquíH',

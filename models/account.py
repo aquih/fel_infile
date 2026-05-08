@@ -35,8 +35,8 @@ class AccountMove(models.Model):
                 factura.partner_id.nombre_facturacion_fel = factura.partner_id.obtener_datos_facturacion_fel(factura.partner_id.vat)['nombre']
             
             dte = factura.dte_documento()
-            xmls = etree.tostring(dte, encoding="UTF-8")
-            _logger.info(xmls.decode("utf-8"))
+            xmls = etree.tostring(dte, encoding="utf-8", xml_declaration=True)
+            _logger.info(xmls)
             xmls_base64 = base64.b64encode(xmls)
             
             identificador = factura.journal_id.code+'-'+str(factura.id)
@@ -51,9 +51,9 @@ class AccountMove(models.Model):
                 "identificador": identificador,
                 "Content-Type": "application/xml",
             }
-            data = xmls.decode("utf-8")
             _logger.info(headers)
-            r = requests.post('https://certificador.feel.com.gt/fel/procesounificado/transaccion/v2/xml', data=data, headers=headers)
+
+            r = requests.post('https://certificador.feel.com.gt/fel/procesounificado/transaccion/v2/xml', data=xmls, headers=headers)
             _logger.info(r.text)
             resultado_json = r.json()
 
@@ -78,8 +78,8 @@ class AccountMove(models.Model):
             if factura.requiere_certificacion() and factura.firma_fel:                    
                 dte = factura.dte_anulacion()
                 
-                xmls = etree.tostring(dte, encoding="UTF-8")
-                _logger.info(xmls.decode("utf-8"))
+                xmls = etree.tostring(dte, encoding="utf-8", xml_declaration=True)
+                _logger.info(xmls)
 
                 identificador = factura.journal_id.code+'-'+str(factura.id)
                 if factura.uuid_pos_fel:
@@ -90,18 +90,17 @@ class AccountMove(models.Model):
                     "LlaveFirma": factura.company_id.token_firma_fel,
                     "UsuarioApi": factura.company_id.usuario_fel,
                     "LlaveApi": factura.company_id.clave_fel,
-                    "identificador": identificador
+                    "identificador": identificador,
+                    "Content-Type": "application/xml",
                 }
-                data = xmls.decode("utf-8")
                 _logger.info(headers)
-                r = requests.post('https://certificador.feel.com.gt/fel/procesounificado/transaccion/v2/xml', data=data, headers=headers)
+                
+                r = requests.post('https://certificador.feel.com.gt/fel/procesounificado/transaccion/v2/xml', data=xmls, headers=headers)
                 _logger.info(r.text)
                 resultado_json = r.json()
 
-                if resultado_json and "resultado" in resultado_json and resultado_json["resultado"]:
-                    factura.error_certificador(str(resultado_json["descripcion_errores"]))
-                else:
-                    factura.error_certificador(r.text)
+                if not resultado_json["resultado"]:
+                    raise UserError(str(resultado_json["descripcion_errores"]))
         
         return result
 

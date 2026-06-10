@@ -115,21 +115,3 @@ class ResCompany(models.Model):
     token_firma_fel = fields.Char('Llave Firma FEL')
     certificador_fel = fields.Selection(selection_add=[('infile', 'Infile')])
     buscar_nombre_para_dte_fel = fields.Boolean('Buscar nombre en SAT para enviar al certificador')
-
-class Partner(models.Model):
-    _inherit = 'res.partner'
-    
-    def _datos_sat(self, company, vat):
-        if vat:
-            headers = { "Content-Type": "application/json" }
-            data = {
-                "emisor_codigo": company.usuario_fel,
-                "emisor_clave": company.clave_fel,
-                "nit_consulta": vat.replace('-',''),
-            }
-            r = requests.post('https://consultareceptores.feel.com.gt/rest/action', json=data, headers=headers)
-            _logger.info(r.text)
-            if r and r.json():
-                return r.json()
-                
-        return {'nombre': '', 'nit': ''}
